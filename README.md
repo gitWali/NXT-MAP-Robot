@@ -1,3 +1,4 @@
+# Information about this Code_school_project
 # NXT-MAP-Robot
 
 This is the code for an NXT robot
