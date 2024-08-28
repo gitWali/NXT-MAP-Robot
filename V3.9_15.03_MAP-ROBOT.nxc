@@ -1,0 +1,569 @@
+#define XMo OUT_A
+#define YMo OUT_C
+#define Stift OUT_B
+
+#define YStop1 IN_3
+#define YStop2 IN_2
+#define XStop2 IN_4
+#define XStop1 IN_1
+
+#define BT_CONN 0
+#define EMPFANGS_KANAL 3
+#define Sende_Kanal 4 //Für die Bestätigung, dass ich die Daten erhalten habe
+
+
+
+void BTCheck(int conn)
+     {
+      if(BluetoothStatus(conn)!=NO_ERR)
+     {
+      TextOut(5,LCD_LINE6,"Keine Verbindung!");
+      Wait(1000);
+      StopAllTasks();
+     }
+  }
+sub penDown() //Unterprogramm für das Senken vom Stift
+    {
+     RotateMotor(Stift, 50, 85); //Funktion Stift nah unten bewegen
+    }
+
+sub penUp()  //Unterprogramm für das Heben vom Stift
+     {
+     RotateMotor(Stift, 50, -85); //Funktion Stift nach oben bewegen
+     }
+
+sub safetystop()
+    {
+     SetSensorTouch(YStop1);
+     SetSensorTouch(YStop2);
+     SetSensorTouch(XStop1);
+     SetSensorTouch(XStop2);
+     int a = 1; //Variable für Stop bei Sensor 1
+     int b = 1; //Variable für Stop bei Sensor 4
+     int c = 1; //Variable für Stop bei Sensor 2
+     int d = 1; //Variable für Stop bei Sensor 3
+     while(true){              //Abschnitt für Motorabschaltung in X-Richtung bei berührung des Sensors 1
+     while (a == 1){
+     OnFwd(XMo, 35);
+     if(SENSOR_1 == 1){
+      a = 0;
+      Off(XMo);
+      }
+     }
+     while (b == 1){          //Abschnitt für Motorabschaltung in X-Richtung bei berührung des Sensors 4
+     OnFwd(XMo, 35);
+     if(SENSOR_4 == 1){
+      b = 0;
+      Off(XMo);
+      }
+     }
+     while (c == 1){          //Abschnitt für Motorabschaltung in Y-Richtung bei berührung des Sensors 2
+     OnFwd(YMo, 35);
+     if(SENSOR_2 == 1){
+      c = 0;
+      Off(YMo);
+      }
+     }
+     while (d == 1){         //Abschnitt für Motorabschaltung in Y-Richtung bei berührung des Sensors 3
+     OnFwd(YMo, 35);
+     if(SENSOR_3 == 1){
+      d = 0;
+      Off(YMo);
+      }
+     }
+    }
+    return;
+   }
+
+sub grundposition()    //Funktion um den Stift in die Grundposition zu fahren
+    {
+     SetSensorTouch(YStop2);
+     SetSensorTouch(XStop2);
+     int x = 1;
+     int y = 1;
+     while(true){           //Abschnitt für die Motorabschaltung bei Kollision mit Sensor 4 in X-Richtung bei erreichen der ersten höfte der Grundposition
+     while(x == 1) {
+      OnFwd(XMo, 45);
+      if(SENSOR_4 == 1){
+        x = 0;
+        Off(XMo);
+      }
+    }
+    while(y == 1) {       //Abschnitt für die Motorabschaltung bei Kollision mit Sensor 2 in Y-Richtung bei erreichen der ersten höfte der Grundposition
+      OnFwd(YMo, 45);
+      if(SENSOR_2 == 1) {
+        y = 0;
+        Off(YMo);
+      }
+    }
+  return;
+  }
+  
+}
+
+sub skalaXachse()     //Funktion für den Skalaabschnitt entlang der X-Achse (Gerader Strich mit anschließend jeden cm eien folgenden vertikalen Strich)
+    {
+       penDown();  //Stift senken zum zeichnen
+       RotateMotor(XMo , 35 , -791.39);    //Motor ansteuern und ihn die Strecke fahren lassen ((-770 IST GENAU 18CM IN X-RICHTUNG))
+       penUp();    //Stift heben nach dem zeichnen
+    }
+
+sub skalaXachseStriche()  //Funktion für die Beschriftung des X-Achsenabschnitts der Skala
+    {
+        //RotateMotor(XMo , 35 , -70);  //"-199.7723" Startposition der Skala und somit auch der Skalabeschriftung auf dem Papier
+        int count = 0;
+        while (count !=19)
+        {
+          penDown();             //|> 83.33 entspricht ca. 1.5cm beim Drucker laut Rechnung (460/18=25.555555555555 == 1cm ) auf der Y-Achse
+          RotateMotor(YMo , 35 , -38.33);
+          penUp();
+          RotateMotor(YMo , 35 ,  38.33);
+                          //|>  42.777777777777 entspricht ca. 1cm beim Drucker laut Rechnung (770/18=42.777777777777) auf der X-Achse
+          RotateMotor(XMo , 35 , -42.777777777777);
+          count ++;
+        }
+    }
+
+sub startpointnumberX()   //Dieses Unterprogramm dient dafür, dass die Nummerierung nicht am anfang der Skala beginnt, sonder da, wo der erste Strich auf der X-Achse ist
+    {
+      RotateMotor(XMo , -35 , 80);
+      RotateMotor(YMo , -35 ,  11.875 /*31.875, damit er 1.25cm unter dem Strich auf der X-Achse ist und dann die Zahl zeichnet*/);
+    }
+
+sub startpointnumberY()    //Unterprogramm für die begrenzte Beschriftung der Y-Achse
+    {                        //> 38.34 sind 1.5cm auf der Y-Achse
+     RotateMotor(YMo , -35 , 38.34);
+     RotateMotor(XMo , -35 , 42.777777777777);
+     safetystop();
+    }
+
+sub startpointYachseStriche()  //Unterprogramm für den Startpunkt der Einteilung entlang der Y-Achse
+    {
+     grundposition();
+     RotateMotor(XMo , -35 , 60);
+     RotateMotor(YMo , 35 , 38.33);
+     safetystop();
+    }
+
+sub skalaYachseStriche()  //Unterprogramm für die Beschriftung des X-Achsenabschnitts der Skala
+    {
+    RotateMotor(YMo , -40 , 80);
+     int count = 0;
+        while (count != 18)
+        {
+          penDown();             //|> 42.777777777777 entspricht ca. 1cm beim Drucker laut Rechnung (770/18=42.777777777777) auf der X-Achse
+          RotateMotor(XMo , 40 , -42.777777777777);
+          penUp();
+          RotateMotor(XMo , 40 ,  42.777777777777);
+                          //|>  25.555555555555 entspricht ca. 1cm beim Drucker laut Rechnung (460/18=25.555555555555) auf der Y-Achse
+          RotateMotor(YMo , 40 , -30);
+          count ++;
+        }
+    }
+
+sub skalaYachse()     //Funktion für den Skalaabschnitt entlang der Y-Achse (Gerader Strich mit anschließend jeden cm eien folgenden horizontalen Strich)
+    {
+      RotateMotor(YMo , 35 , -548.89);    //Motor ansteuern und ihn die Strecke fahren lassen  ((-460 IST GENAU 18CM IN Y-RICHTUNG))
+      penDown();  //Stift senken zum zeichnen
+      RotateMotor(YMo , 35 , 548.89);    //Motor ansteuern und ihn die Strecke fahren lassen  ((-460 IST GENAU 18CM IN Y-RICHTUNG))
+      penUp();    //Stift heben nach dem zeichnen
+    }
+
+//Römische Zahlen anfang
+sub roemischI()  //Dieses Unterprogramm dient ausschließlich der Achsenbeschriftung!
+    {
+     penDown();
+     RotateMotor(YMo , 35 , -25.555555555555);   //Zeichnet die Römische 1 und kehrt zur ursprungsposition für das weitere Zeichnen zurück.
+     penUp();
+     RotateMotor(YMo , 35 , 25.555555555555);
+     //RotateMotor(XMo , 35 , 30);
+    }
+
+sub roemischV()  //Dieses Unterprogramm dient ausschließlich der Achsenbeschriftung!
+    {
+     penDown();
+     OnFwd(YMo , 50);
+     OnFwd(XMo , 40);
+     Wait(120);
+     Off(YMo);
+     Off(XMo);
+     Wait(SEC_1);
+     OnRev(YMo , 20);
+     OnRev(XMo , 10);
+     Wait(340);
+     Off(YMo);
+     Off(XMo);
+     penUp();
+    }
+
+//Anfang vom Abschnitt für das Zeichnen vom "X"
+    sub XLinksUnten()  //Fährt für das X von oben Rechts nach unten Rinks
+        {
+        OnFwd(YMo , 50);
+        OnFwd(XMo , 40);
+        Wait(150);
+        Off(YMo);
+        Off(XMo);
+        }
+
+    sub XRechtsUnten()  //Fährt für das X von oben Links nach unten Rechts
+       {
+       OnFwd(YMo , 50);
+       OnRev(XMo , 40);
+       Wait(150);
+       Off(YMo);
+       Off(XMo);
+       }
+    
+sub roemischX()  //Dieses Unterprogramm dient nicht ausschließlich zur Achsenbeschriftung, sondern auch für die Markierung der Fundposition
+    {
+     penDown();
+      XLinksUnten();
+      penUp();
+      RotateMotor(YMo , -35 , 26); //fährt an dem  X von der unteren Position nach oben
+      penDown();
+      XRechtsUnten();
+     penUp();
+    }
+//Ende vom Abschnitt für das Zeichnen vom "X"
+
+sub numberline()       //oberhalb und unterhalb der Römischen Zahlen einen strich, um zu verdeutlchen, dass es sich um römische Zahlen handelt
+    {
+     RotateMotor(XMo , 35 , 12.5);
+     penDown();
+     RotateMotor(XMo , -35 , 25);
+     penUp();
+     RotateMotor(YMo , -35 , 25);
+     penDown();
+     RotateMotor(XMo , 35 , 25);
+     penUp();
+    }
+//Römische Zahlen ende
+
+//Abschnitt für die komplette beschriftung der X-Achse
+sub slakaXachseBeschriftung()
+    {
+        //Abrufen des Unterprogramms für die Startposition der beschriftung der X-Achse, dass diese auch getroffen wird und nicht daneben gezeichnet wird.
+        startpointnumberX();
+        //Abschnitt für das Zeichnen der Zahl 1 mit der Römischen Zahl
+        RotateMotor(YMo , 35 , 40);
+        roemischI();                           //==  1
+        //numberline();
+        
+        //Abschnitt für das Zeichnen der Zahl 5 mit Römischen Zahl
+                                   //> 171.11 sind 4cm nach rechts auf X-Achse
+        RotateMotor(XMo , -35 , 171.11);
+        roemischV();                          //==  5
+          //numberline();
+        RotateMotor(XMo , -35 , 85.56);
+
+        //Abschnitt für das Zeichnen der Zahl 7 mit Römischen Zahlen
+        roemischV();
+        RotateMotor(XMo , -35 , 15);
+        RotateMotor(YMo , 35 , 30);
+        roemischI();                          //==  7
+        RotateMotor(XMo , -35 , 15);
+        roemischI();
+          //numberline();
+        RotateMotor(XMo , -35 , 128.33);
+        RotateMotor(YMo , -35 , 40);
+        
+        //Abschnitt für das Zeichnen der Zahl 10 mit Römischen Zahlen
+        roemischX();
+          //numberline();                     //== 10
+        RotateMotor(XMo , -35 , 171.11);
+        RotateMotor(YMo , -35 , 30);
+        
+        //Abschnitt für das Zeichnen der Zahl 14 mit Römischen Zahlen
+        roemischX();
+        RotateMotor(XMo , -35 , 20);
+        roemischI();                          //== 14
+        RotateMotor(XMo , -35 , 30);
+        RotateMotor(YMo , -35 , 25.56);
+        roemischV();
+          //numberline();
+          
+        //Abschnitt für das Zeichnen der Zahl 18 mit Römischen Zahlen
+                                  //> 111.23 sind 2.6cm auf der X-Achse
+        RotateMotor(XMo , -35 , 111.23);
+        roemischX();
+        RotateMotor(XMo , -35 , 45);
+        RotateMotor(YMo , -35 , 25.56);
+        roemischV();                         //== 18
+        RotateMotor(YMo , 35 , 25.56);
+        RotateMotor(XMo , -35 , 25);
+        roemischI();
+        RotateMotor(XMo , -35 , 10);
+        roemischI();
+        RotateMotor(XMo , -35 , 10);
+        roemischI();
+          //numberline();
+    }
+
+//  Die Y-Achse kann aus Platzgründen auf dem Papier nicht vollständig beschriftet werden, weshalb die Zahlen 5 , 7 , 14 und 18 nicht verwendet werden!
+
+sub slakaYachseBeschriftung()
+    {
+        grundposition();
+        startpointnumberY();
+        roemischI();                          //==  1
+          //numberline();
+
+                                //-> 281.16 sind 9 cm auf der Y-Achse, sodass das X (Römisch 10) auch an der Skala bei der 10 steht.
+        RotateMotor(YMo , -35 , 306.72);
+        safetystop();
+        roemischX();
+          //numberline();                         //== 10
+          
+
+/*
+                               //-> 127.8 sind 5cm auf der Y-Achse
+        RotateMotor(YMo , -35 ,127.8 );
+        roemischV();                          //==  5
+          //numberline();
+          
+                                 //->51.12 sind 2 cm auf der Y-Achse
+        RotateMotor(YMo , -35 , 51.12);
+        roemischV();
+        RotateMotor(XMo , -35 , 15);
+        RotateMotor(YMo , 35 , 30);
+        roemischI();                          //==  7
+        RotateMotor(XMo , -35 , 15);
+        roemischI();
+          //numberline();
+
+
+ 
+                              //-> 76.68 sind 3 cm auf der Y-Achse
+        RotateMotor(YMo , -35 , 76.68);
+        roemischX();
+          //numberline();                         //== 10
+          
+
+                               //-> 102.24 sind 4 cm auf der Y-Achse
+        RotateMotor(YMo , -35 , 102.24);
+        roemischX();
+        RotateMotor(XMo , -35 , 20);
+        roemischI();                          //== 14
+        RotateMotor(XMo , -35 , 30);
+        RotateMotor(YMo , -35 , 25.56);
+        roemischV();
+          //numberline();
+
+                                 //-> 102.24 sind 2 cm auf der Y-Achse
+        RotateMotor(YMo , -35 , 102.24);
+        roemischX();
+        RotateMotor(XMo , -35 , 10);
+        roemischV();                            //== 18
+        RotateMotor(XMo , -35 , 10);
+        roemischI();
+        RotateMotor(XMo , -35 , 10);
+        roemischI();
+        RotateMotor(XMo , -35 , 10);
+        roemischI();
+          numberline();
+
+
+*/
+
+}
+
+sub startpoint()
+    {                      //-68.44
+     RotateMotor(XMo , 35 , -68.44);  //Startposition der Skala auf dem Papier so nahe am Rand wie Möglich
+     RotateMotor(YMo , 35 , -12);     //Startposition, dass auch auf der Skala angefangen wird
+     safetystop();
+    }
+
+
+sub location()
+    {
+       float K = 0.0; //Variable für das Empfangen vom Master und rechnen der Daten in X-Richtung beim Map-Roboter.
+       float L = 0.0; //Variable für das Empfangen vom Master und rechnen der Daten in Y-Richtung beim Map-Roboter.
+       int wait = 0;
+       int maxwait = 60.000; //180000; //wartet maximal 3 minuten auf das Datenempfangen
+
+       TextOut(5 , LCD_LINE2 , "Warte auf Daten...");     //Ausgabe auf dem Display, dass auf die Daten vom Master gewartet wird
+       Wait(SEC_1);
+              //->wait < maxwait
+       while( K == 0 && L == 0)    //Schleife für das Empfangen der Daten
+              {
+               BTCheck(BT_CONN);
+               until (ReceiveRemoteNumber(EMPFANGS_KANAL, true , K) == NO_ERR); //Strecke für X-Richtung   //Einsetzen der ersten Objektkoordinate in K für die Strecke in X-Richtung
+               until(BluetoothStatus(BT_CONN) == NO_ERR);
+               SendResponseNumber(Sende_Kanal , 1);
+               Wait(SEC_3);
+               NumOut(0,LCD_LINE3 , K);
+               Wait(SEC_2);
+               ClearScreen();
+               Wait(SEC_5);
+               until (ReceiveRemoteNumber(EMPFANGS_KANAL, true , L) == NO_ERR); //Strecke für Y-Richtung   //Einsetzen der ersten Objektkoordinate in L für die Strecke in Y-Richtung
+               until(BluetoothStatus(BT_CONN) == NO_ERR);
+               SendResponseNumber(Sende_Kanal , 1);
+               Wait(SEC_3);
+               NumOut(0,LCD_LINE4 , L);
+               Wait(SEC_2);
+               ClearScreen();
+               Wait(SEC_5);
+               wait ++;
+               Wait(SEC_2); //wartet nach jedem Durchlauf 2 Sekunden
+               ClearScreen();
+
+               if(wait == maxwait)  //Schleife, bis wait den wert von maxwait erreicht hat mit einer folgenden Ausgabe, dass keine Daten empfangen werden konnten.
+                       {
+                         TextOut(5 , LCD_LINE3 , "Es konnten keine Daten ");
+                         TextOut(5 , LCD_LINE4 , "empfangen werden!");
+                         Wait(SEC_5);
+                         ClearScreen();
+                       }
+               else
+               {
+                TextOut(5 , LCD_LINE2 , "Daten erhalten. ");        //Ausgabe auf dem NXT-Display, dass die Daten vom Master empfangen wurden.
+       Wait(SEC_1);
+       ClearScreen(); //Bildschirm von der Ausgabe zuvor leeren
+//     SendRemoteNumber(BT_CONN , Sende_Kanal , 2); //Sendet einen Wert an den Master um zu bestätigen, dass ich als Map-Roboter die Werte erhalten habe
+
+//Testabschnitt
+
+       // float K = 50; //Variable für die Ausgabe der Fundposition (in X-Richtung) zur Verwendung beim Map-Roboter
+       // float L = 80; //Variable für die Ausgabe der Fundposition (in Y-Richtung) zur Verwendung beim Map-Roboter
+
+//ende Testabschnitt
+
+           float scale = 6.666666; // Maßstab für die Umrechnung von Originalgröße auf Mapgröße (von 120cm x 120cm auf 18cm x 18cm)
+           float mapwayX = K / scale;
+           // o += mapwayX; //Setzt "o" auf den Wert, welcher die Strecke in Mapgröße nach umrechnung der Strecke in Originalmaßstab beträgt (Maßstab 1:6.666666)
+           float mapwayY = L / scale;
+           // p += mapwayY;
+
+           ClearScreen();      //Bildschirm von der Ausgabe zuvor leeren
+           TextOut(5 , LCD_LINE2 , "Das Objekt befindet " );
+           TextOut(5 , LCD_LINE3 , "sich bei X= " + NumToStr(mapwayX)); //o
+           TextOut(5 , LCD_LINE4 , "und bei Y= " + NumToStr(mapwayY));  //p     //Ausgabe, wo sich das Objekt auf der Karte befindet.
+
+
+           float X = mapwayX * 50;  //zuvor: 42.777777777777  //Umrechnung von der Position in X-Richtung auf der Map mal die Gradzahl von dem Motor für einen Centimeter auf dem Papier in X-Richtung.
+           float Y = mapwayY * 30;  //zuvor: 25.555555555555 //Umrechnung von der Position in Y-Richtung auf der Map mal die Gradzahl von dem Motor für einen Centimeter auf dem Papier in Y-Richtung.
+
+           float x = X + 0.1;
+           float y = Y + 0.1;
+
+           startpoint();
+           RotateMotor(XMo , -70 , x); //mapwayX war zuvor "o" Bringt den Stift mit dem X-Motor an die fundposition in X-Richtung
+           RotateMotor(YMo , -70 , y); //mapwayY war zuvor "p" Bringt den Stift mit dem Y-Motor an die fundposition in Y-Richtung
+           //RotateMotor(YMo , 35 , 25.555555555555); // fährt den Stift um 1cm nach unten, um das Kreuz mit der Mitte Exakt auf der funrposition zu haben
+           //RotateMotor(XMo , 35 , 42.777777777777); // muss noch angepasst werden! ist derzeit 1cm versatz, um das Kreuz mit der Mitte auf der Fundposition zu haben
+           safetystop();
+           roemischX();
+           
+           if ( SENSOR_3 != 1 || SENSOR_1 != 1 )
+           {
+            Off(YMo);
+            Off(XMo);
+            grundposition();
+           }
+           
+           grundposition();
+                K = 0.0;
+                L = 0.0;
+               }
+
+              return;
+              }
+        
+    }
+
+ 
+task main() {             //Hauptfunktion für den Druckauftrag
+   //penUp();                                                      //Zeit für das Zeichnen der Skala: 3 : 16 min
+  grundposition();
+
+  startpoint();
+
+  skalaYachse();
+  skalaXachse();
+  grundposition();
+  startpoint();
+   skalaXachseStriche();
+   startpointYachseStriche();
+   skalaYachseStriche();
+   grundposition();
+    slakaXachseBeschriftung();
+
+                  //Der Abschnitt für die Beschriftung der Y-Achse. Wurde aber aufgrund von Platzgründen auf dem Papier reduziert.
+   RotateMotor(XMo , -35 , 25);  //Fährt ein stück vom Rand weck mit dem Stift, dass er auf dem Papier zeichnet und nicht den Stift kaputt macht.
+   slakaYachseBeschriftung();
+
+
+    grundposition();
+    
+     TextOut(5 , LCD_LINE2 , "Die Skala ist " );
+     TextOut(5 , LCD_LINE3 , "fertiggestellt!" ); //Ausgabe, dass das erstellen der Skala abgeschlossen ist
+     Wait(SEC_5);         //Timer von 5 sekunden zum lesen der nachricht, welche zuvor ausgegeben wird
+     ClearScreen();       //Bildschirm leeren
+
+
+
+ int ende = 0;
+ while (ende !=4)
+ {
+  BTCheck(BT_CONN);
+  int h = 0;
+  int g = 0;
+  TextOut(5 , LCD_LINE2 , "Warte auf Daten" );
+  Wait(SEC_1);
+  while (h == 0)
+  {
+  until (ReceiveRemoteNumber(EMPFANGS_KANAL, true , h) == NO_ERR);
+  Wait(SEC_1);
+  }
+  ClearScreen();
+  NumOut(5 , LCD_LINE2 , h);
+  until(BluetoothStatus(BT_CONN) == NO_ERR);
+  Wait(SEC_5);
+  SendResponseNumber(Sende_Kanal , 199);
+  TextOut(5 , LCD_LINE2 , "Antwort gesendet!" );
+  Wait(SEC_4);
+
+  while (g == 0)
+  {
+  TextOut(5 , LCD_LINE2 , "Warte auf Daten" );
+  until(ReceiveRemoteNumber(EMPFANGS_KANAL, true , g) == NO_ERR);
+  Wait(SEC_3);
+  }
+  ClearScreen();
+  NumOut(5 , LCD_LINE2 , g);
+  until(BluetoothStatus(BT_CONN) == NO_ERR);
+  Wait(SEC_5);
+  SendResponseNumber(Sende_Kanal , 199);
+  TextOut(5 , LCD_LINE2 , "Antwort gesendet!" );
+  Wait(SEC_3);
+  ende ++;
+  g = 0;
+  h = 0;
+  NumOut(0 , LCD_LINE3 , h);
+  NumOut(0 , LCD_LINE4 , g);
+  Wait(SEC_5);
+  ClearScreen();
+
+  int ende = 0;
+  while ( ende != 4)   //Schleife für das einzeichnen der Fundpositionen, bis der Master sendet, dass er fertig ist.
+  {
+
+    location();
+    TextOut(5 , LCD_LINE2 , "Die Objekte  " );
+    TextOut(5 , LCD_LINE3 , "werden derzeit " );
+    TextOut(5 , LCD_LINE4 , "eingezeichnet! " );
+    Wait(SEC_3);
+    ClearScreen();
+    ende ++;
+  }
+
+  
+  }
+
+  
+}
+
+
+
