@@ -1,6 +1,9 @@
 # Information about this Code_school_project
 # NXT-MAP-Robot
 
+it's like C++ only with special commands that the robots can execute
+
+
 This is the code for an NXT robot
 
 it is the result of a school project where a process is to be automated.
